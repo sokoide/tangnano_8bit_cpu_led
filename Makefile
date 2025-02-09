@@ -1,4 +1,6 @@
-SRC=src/top.sv src/cpu.sv src/ram.sv
+# IPCORE_PATH=/Applications/GowinEDA.app/Contents/Resources/Gowin_EDA/IDE
+# $(IPCORE_PATH)/simlib/gw2a/prim_sim.v
+SRC=src/top.sv src/cpu.sv src/gowin_sp/gowin_sp.v
 TEST=src/tb_cpu.sv
 export BASE=8bit_bsram
 PROJ=$(BASE).gprj
@@ -13,7 +15,7 @@ PRG=/Applications/GowinEDA.app/Contents/Resources/Gowin_EDA/Programmer/bin/progr
 
 export PATH
 
-.PHONY: testbin generate clean run wave synthesize download
+.PHONY: testbin generate clean testrun wave synthesize download
 
 synthesize: $(SRC)
 	$(GWSH) proj.tcl
@@ -22,30 +24,31 @@ $(FS): synthesize
 
 
 # operation_index
-# 1: SRAM
-# 2: Read
-# 3: Verify
-# 4: Erase
-# 5: Flash (internal)
-# 6: Flash (external)
+# /Applications/GowinEDA.app/Contents/Resources/Gowin_EDA/Programmer/bin/programmer_cli -h
+#  --operation_index <int>, --run <int>, -r <int>
+# 0: Read Device Codes;
+# 1: Reprogram;
+# 2: SRAM Program;
+# 3: SRAM Read;
+# 4: SRAM Program and Verify;
+# 5: embFlash Erase,Program;
+# ...
 download: $(FS)
 	# SRAM
-	$(PRG) --device $(DEVICE) --fsFile $(FS) --operation_index 1
+	$(PRG) --device $(DEVICE) --fsFile $(FS) --operation_index 2
 	# Flash
 	#$(PRG) --device $(DEVICE) --fsFile $(FS) --operation_index 5
-
-testbin: generate
 
 generate: $(TESTMAIN_TB)
 	verilator --trace --cc $(TEST) $(SRC) --assert --timing --exe --build $(TESTMAIN_TB) --top-module tb_cpu -DDEBUG_MODE
 
-clean:
-	rm -rf obj_dir waveform.vcd
+testbin: generate
 
-run: testbin
+testrun: testbin
 	./obj_dir/$(TESTBIN)
 
-wave: run
+wave: testrun
 	gtkwave ./waveform.vcd
 
-
+clean:
+	rm -rf obj_dir waveform.vcd

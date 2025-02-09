@@ -4,14 +4,10 @@ module cpu(
   input  logic [3:0]   btn,
   input  logic [23:0]  counter,
   output logic [3:0]   led,
-  output logic [3:0]   adr,
+  output logic [10:0]  adr,
   output logic [7:0]   col,
   output logic [7:0]   row,
-  input  logic [7:0]   dout
-
-`ifdef DEBUG_MODE
-  , output logic [3:0] debug_regs [7:0]  // Debug output (only in debug mode)
-`endif
+  input  logic [15:0]  dout
 );
 
   // Decode the instruction fields from dout.
@@ -25,19 +21,14 @@ module cpu(
 
   // Internal registers.
   logic        c_flag;
-  logic [3:0]  regs [7:0];
-
-`ifdef DEBUG_MODE
-  // Assign debug output for testing
-  assign debug_regs = regs;
-`endif
+  logic [15:0]  regs [7:0];
 
   // Output assignments.
-  assign led = regs[6];
-  assign adr = regs[7];
+  assign led = regs[6][3:0];
+  assign adr = regs[7][10:0]; // only the lower bits are used for addressing
 
   // anode
-  assign row = { regs[i][0], regs[i][1], regs[i][2], regs[i][3], 4'b0000};
+  assign row = { regs[i][0], regs[i][1], regs[i][2], regs[i][3], regs[i][4], regs[i][5], regs[i][6], regs[i][7] };
   // cathode
   assign col ={i!=0,i!=1,i!=2,i!=3,i!=4,i!=5,i!=6,i!=7};
 
@@ -45,7 +36,8 @@ module cpu(
   always_ff @(posedge clk or negedge reset) begin
     if (!reset) begin
       // Reset: clear selected registers and the flag.
-      {regs[0], regs[1], regs[2], regs[3], regs[4], regs[6], regs[7], c_flag} <= '0;
+      {regs[0], regs[1], regs[2], regs[3], regs[4], regs[6], regs[7]} <= 16'd0;
+            c_flag  <= 1'b0;
     end else begin
       // Update register 5 with the button input.
       regs[5] <= btn;
@@ -58,9 +50,7 @@ module cpu(
         // ADD: Add regs[sss] to regs[0] and set the carry flag if the sum exceeds 15.
         5'b01000: begin
           regs[0] <= regs[0] + regs[sss];
-          /* verilator lint_off CMPCONST */
-          c_flag  <= ((regs[0] + regs[sss]) > 4'd15) ? 1'b1 : 1'b0;
-          /* verilator lint_on CMPCONST */
+          c_flag  <= ((regs[0] + regs[sss]) > 8'hFF) ? 1'b1 : 1'b0;
         end
 
         // OR: Logical OR between regs[0] and regs[sss].
@@ -75,17 +65,17 @@ module cpu(
         // INC: Increment regs[sss] and update carry flag if overflow.
         5'b01100: begin
           regs[sss] <= regs[sss] + 1;
-          c_flag    <= ((regs[sss] + 1) > 4'd15) ? 1'b1 : 1'b0;
+          c_flag    <= ((regs[sss] + 1) > 8'hFF) ? 1'b1 : 1'b0;
         end
 
         // NOT: Bitwise NOT of regs[sss].
         5'b01101: regs[sss] <= ~regs[sss];
 
         // RROTATE: Right rotate regs[sss].
-        5'b01110: regs[sss] <= (regs[sss] >> 1) | ((regs[sss] << 3) & 4'b1000);
+        5'b01110: regs[sss] <= (regs[sss] >> 1) | ((regs[sss] << 7) & 8'b10000000);
 
         // LROTATE: Left rotate regs[sss].
-        5'b01111: regs[sss] <= (regs[sss] << 1) | ((regs[sss] >> 3) & 4'b0001);
+        5'b01111: regs[sss] <= (regs[sss] << 1) | ((regs[sss] >> 7) & 8'b0000001);
 
         // JNC: Jump if no carry; otherwise, increment PC.
         5'b1000z: begin

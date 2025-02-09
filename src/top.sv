@@ -9,51 +9,87 @@ module top(
 );
 
   // internal signals
-  logic [7:0]  w_data;
-  logic [7:0]  r_data;
-  logic [3:0]  adr;
   logic [3:0]  led;
   logic [3:0]  btn;
   logic [23:0] counter;
 
-  assign w_data = 8'd0;
-  assign btn = {4'b00, S2, S1};
+  // Wire CPU - BSRAM
+  // The CPU’s PC is output on "adr" (here 16 bits, but only the lower bits are used for addressing)
+  logic [10:0] cpu_pc;              // CPU program counter
+  logic [15:0] cpu_instruction;     // registered instruction to feed the CPU
+  // logic [15:0] mem_din;             // memory write data (unused during normal read)
+  // logic [15:0] mem_dout;            // memory read data
+  logic [15:0] dout;
 
-  // output port leds are negatives of internal signal led
-  assign leds = ~led;
+  // BSRAM control signals
+  logic ce;   // chip enable
+  // logic wre;  // write enable
+  logic oce;  // output enable
 
-  // RAM instance
-  ram ram1 (
-    .clk       (counter[23]),
-    .we        (1'b0),
-    .r_addr    ({4'b0000, adr}),
-    .r_data    (r_data),
-    .w_addr    ({4'b0000, adr}),
-    .w_data    (w_data)
-  );
 
-  // CPU instance
-  cpu cpu1 (
-    .reset   (rst),
-    .clk     (counter[23]),
-    .btn     (btn),
-    .counter (counter),
-    .led     (led),
-    .adr     (adr),
-    .col     (col),
-    .row     (row),
-    .dout    (r_data)
-`ifdef DEBUG_MODE
-    , .debug_regs()
-`endif
-  );
+  // Set the constant for output enable.
+  assign ce = 1'b1;
+  // assign wre = 1'b0;
+  assign oce = 1'b1;
+  // Chip enable is already driven by the state machine (mem_ce).
 
-  // update counter
+  // BSRAM instance.
+  // (Note: Make sure the reset signal here is connected properly.
+  //  If your top module input is rst, you may want to pass rst or its synchronized version.)
+  // Gowin_SP bsram_inst (
+  //   .clk   (clk),
+  //   .oce   (mem_oce),
+  //   .ce    (mem_ce),
+  //   .reset (!rst),       // using rst here for consistency
+  //   .wre   (mem_wre),
+  //   .ad    (cpu_pc),
+  //   .din   (mem_din),
+  //   .dout  (mem_dout)
+  // );
+
+  Gowin_pROM bsram_inst(
+    .dout(dout), //output [15:0] dout
+    .clk(clk), //input clk
+    .oce(oce), //input oce
+    .ce(ce), //input ce
+    .reset(!rst), //input reset
+    .ad(cpu_pc) //input [10:0] ad
+);
+
+// --- Instruction Register ---
+reg [15:0] dout_latched;
+
+// Latch PROM output to avoid timing issues
+always_ff @(posedge clk or negedge rst) begin
+  if (!rst)
+      dout_latched <= 16'd0;
+  else
+      dout_latched <= dout;
+end
+
+
+// The CPU uses cpu_instruction as its fetched instruction and outputs its program counter (cpu_pc).
+cpu cpu1 (
+  .reset   (rst),
+  .clk     (counter[23]),
+  .btn     ({2'b00, S2, S1}),
+  .counter (counter),
+  .led     (led),
+  .adr     (cpu_pc),          // CPU’s program counter output drives the BSRAM in normal mode.
+  .col     (col),
+  .row     (row),
+  .dout    (dout_latched)
+);
+
+  // update counter (for CPU timing)
   always_ff @(posedge clk or negedge rst) begin
     if (!rst)
       counter <= 24'd0;
     else
       counter <= counter + 1;
   end
+
+  // For display: drive LEDs (inverted internal led signal)
+  assign leds = ~led;
 
 endmodule

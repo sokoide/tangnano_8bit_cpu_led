@@ -1,0 +1,14 @@
+#File_format=Hex
+#Address_depth=2048
+#Data_width=16
+#
+# Nop
+0000
+# mvi r0, 1
+00A1
+# lrotate r0
+0078
+# inc r6
+0066
+# jmp 1
+0091
