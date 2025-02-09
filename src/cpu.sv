@@ -84,10 +84,10 @@ module cpu(
         end
 
         // JMP: Unconditional jump.
-        5'b1001z: regs[7] <= {op[0], sss};
+        5'b1001z: regs[7] <= {4'b0000, op[0], sss};
 
         // MVI: Move immediate value into regs[0].
-        5'b1010z: regs[0] <= {op[0], sss};
+        5'b1010z: regs[0] <= {4'b0000, op[0], sss};
 
         // Optionally, you can add a default case.
         default: ; // No operation.

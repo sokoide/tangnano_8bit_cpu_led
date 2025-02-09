@@ -27,10 +27,61 @@ module top(
 
 
   // Set the constant for output enable.
-  assign ce = 1'b1;
-  assign wre = 1'b0;
   assign oce = 1'b1;
-  // Chip enable is already driven by the state machine (mem_ce).
+
+  // Create a register for the bootloader address and a signal to indicate boot mode.
+  logic [10:0] boot_addr;
+  logic        boot_mode;  // 1 during boot, 0 after boot is done
+
+  // Bootloader state machine signals
+  logic [15:0] boot_data [0:15];
+
+  // Program to load during boot
+  initial begin
+    boot_data[0] = 16'b0000_0000_1010_0001; // mvi 1
+    boot_data[1] = 16'b0000_0000_01111_000; // lrotate r0
+    boot_data[2] = 16'b0000_0000_01100_110; // inc r6
+    boot_data[3] = 16'b0000_0000_00_001000; // mov r1, r0
+    boot_data[4] = 16'b0000_0000_01100_001; // inc r1
+    boot_data[5] = 16'b0000_0000_00_010001; // mov r2, r1
+    boot_data[6] = 16'b0000_0000_01100_010; // inc r2
+    boot_data[7] = 16'b0000_0000_00_011010; // mov r3, r2
+    boot_data[8] = 16'b0000_0000_01100_011; // inc r3
+    boot_data[9] = 16'b0000_0000_00_100011; // mov r4, r3
+    boot_data[10] = 16'b0000_0000_01100_100; // inc r4
+    boot_data[11] = 16'b0000_0000_1001_0001;  // jmp 1
+  end
+
+  // Boot process management
+  always_ff @(posedge clk or negedge rst) begin
+    if (!rst) begin
+      boot_addr <= 0;
+      boot_mode <= 1;
+      ce        <= 1;
+      wre       <= 1;
+    end else if (boot_mode) begin
+      din <= boot_data[boot_addr];
+      ce  <= 1;
+      wre <= 1;
+
+      if (boot_addr == 11'd15) begin
+        boot_mode <= 0;  // End boot process after writing all data
+        wre       <= 0;  // Disable write enable
+      end else begin
+        // Increment after din assignment has been used
+        boot_addr <= boot_addr + 1;
+      end
+    end else begin
+      ce  <= 1;  // Normal operation mode
+      wre <= 0;  // No write during normal operation
+    end
+  end
+
+  // Multiplexer for the memory address.
+  // When boot_mode is active, use boot_addr; otherwise, use cpu_pc.
+  // (Assuming cpu_pc’s lower 11 bits are valid for addressing.)
+  logic [10:0] mem_addr;
+  assign mem_addr = boot_mode ? boot_addr : cpu_pc;
 
 // BSRAM instance.
   Gowin_SP bsram_inst (
@@ -39,7 +90,7 @@ module top(
     .ce    (ce),
     .reset (!rst),       // using rst here for consistency
     .wre   (wre),
-    .ad    (cpu_pc),
+    .ad    (mem_addr),
     .din   (din),
     .dout  (dout)
   );
@@ -53,29 +104,17 @@ module top(
 //     .ad(cpu_pc) //input [10:0] ad
 // );
 
-  // --- Instruction Register ---
-  reg [15:0] dout_latched;
-
-  // Latch PROM output to avoid timing issues
-  always_ff @(posedge clk or negedge rst) begin
-    if (!rst)
-        dout_latched <= 16'd0;
-    else
-        dout_latched <= dout;
-  end
-
-
   // The CPU uses cpu_instruction as its fetched instruction and outputs its program counter (cpu_pc).
   cpu cpu1 (
     .reset   (rst),
-    .clk     (counter[23]),
+    .clk     (counter[22]),
     .btn     ({2'b00, S2, S1}),
     .counter (counter),
     .led     (led),
     .adr     (cpu_pc),          // CPU’s program counter output drives the BSRAM in normal mode.
     .col     (col),
     .row     (row),
-    .dout    (dout_latched)
+    .dout    (dout)
   );
 
   // update counter (for CPU timing)

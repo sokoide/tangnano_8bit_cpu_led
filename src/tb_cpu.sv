@@ -38,9 +38,9 @@ module tb_cpu(
 
   // Predefined initialization data.
   initial begin
-    init_data[0] = 16'h0000;
-    init_data[1] = 16'b1010_0001_1010_0001; // mvi r0, 1
-    init_data[2] = 16'b1001_0001_1001_0001; // jmp 1
+    init_data[0] = 16'b0000_0000_1010_0001; // mvi r0, 1
+    init_data[1] = 16'b0000_0000_01111_000; // lrotate r0
+    init_data[2] = 16'b0000_0000_1001_0001; // jmp 1
   end
 
   // Bootloader state machine.
