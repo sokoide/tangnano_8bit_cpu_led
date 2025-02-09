@@ -11,5 +11,5 @@ DEPTH=2048
 LANG=0
 MEM_FILE=../../data/code1.mi
 READ=0
-RESET_MODE=false
+RESET_MODE=true
 WIDTH=16

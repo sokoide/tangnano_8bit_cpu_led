@@ -14,5 +14,5 @@
 -depth 2048
 -width 16
 -read_mode bypass
--reset_mode async
+-reset_mode sync
 -init_file /Users/scott/repo/sokoide/fpga/8bit_bsram/data/code1.mi

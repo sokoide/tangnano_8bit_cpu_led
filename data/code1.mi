@@ -2,8 +2,6 @@
 #Address_depth=2048
 #Data_width=16
 #
-# Nop
-0000
 # mvi r0, 1
 00A1
 # lrotate r0

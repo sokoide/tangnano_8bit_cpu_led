@@ -2,7 +2,7 @@
 
 ## About
 
-* Changes https://github.com/sokoide/tangnano_4bit_cpu_led
+* Changes <https://github.com/sokoide/tangnano_4bit_cpu_led>
   * 8 bit registers
   * 16 bit address space
   * using BSRAM
@@ -12,7 +12,7 @@
 ### Prereq
 
 * brew install verilator
-* clone and build gtkwave at https://github.com/gtkwave/gtkwave
+* clone and build gtkwave at <https://github.com/gtkwave/gtkwave>
 
 ### Build and Download
 
@@ -22,6 +22,8 @@ make download
 ```
 
 ### Test Bench
+
+* TODO: Don't know how to use `SP` with verilator
 
 ```bash
 make clean

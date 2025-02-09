@@ -41,7 +41,7 @@ defparam sp_inst_0.WRITE_MODE = 2'b00;
 defparam sp_inst_0.BIT_WIDTH = 8;
 defparam sp_inst_0.BLK_SEL = 3'b000;
 defparam sp_inst_0.RESET_MODE = "ASYNC";
-defparam sp_inst_0.INIT_RAM_00 = 256'h000000000000000000000000000000000000000000000000000000916678A100;
+defparam sp_inst_0.INIT_RAM_00 = 256'h00000000000000000000000000000000000000000000000000000000916678A1;
 
 SP sp_inst_1 (
     .DO({sp_inst_1_dout_w[23:0],dout[15:8]}),
