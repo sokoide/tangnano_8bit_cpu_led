@@ -32,6 +32,7 @@ module top(
   // Create a register for the bootloader address and a signal to indicate boot mode.
   logic [10:0] boot_addr;
   logic        boot_mode;  // 1 during boot, 0 after boot is done
+  logic        boot_write; // Internal signal to control when to write
 
   // Bootloader state machine signals
   logic [15:0] boot_data [0:15];
@@ -49,27 +50,31 @@ module top(
     boot_data[8] = 16'b0000_0000_01100_011; // inc r3
     boot_data[9] = 16'b0000_0000_00_100011; // mov r4, r3
     boot_data[10] = 16'b0000_0000_01100_100; // inc r4
-    boot_data[11] = 16'b0000_0000_1001_0001;  // jmp 1
+    boot_data[11] = 16'b0000_0000_1001_0001; // jmp 1
   end
 
   // Boot process management
   always_ff @(posedge clk or negedge rst) begin
     if (!rst) begin
-      boot_addr <= 0;
-      boot_mode <= 1;
-      ce        <= 1;
-      wre       <= 1;
+      boot_addr  <= 0;
+      boot_mode  <= 1;
+      ce         <= 1;
+      wre        <= 0;
+      boot_write <= 1;
     end else if (boot_mode) begin
-      din <= boot_data[boot_addr];
-      ce  <= 1;
-      wre <= 1;
-
-      if (boot_addr == 11'd15) begin
-        boot_mode <= 0;  // End boot process after writing all data
-        wre       <= 0;  // Disable write enable
+      if (boot_write) begin
+        din <= boot_data[boot_addr];
+        ce  <= 1;
+        wre <= 1;
+        boot_write <= 0;  // Prevent immediate increment in the same cycle
       end else begin
-        // Increment after din assignment has been used
-        boot_addr <= boot_addr + 1;
+        wre <= 0;  // Disable write after one cycle
+        if (boot_addr == 11'd15) begin
+          boot_mode <= 0;  // End boot process after writing all data
+        end else begin
+          boot_addr <= boot_addr + 1;
+          boot_write <= 1;  // Enable write for the next address
+        end
       end
     end else begin
       ce  <= 1;  // Normal operation mode
