@@ -3,9 +3,12 @@
 ## About
 
 * Changes <https://github.com/sokoide/tangnano_4bit_cpu_led>
-  * 8 bit registers
-  * 16 bit address space
-  * using BSRAM
+  * 8 bit registers `r0`-`r7`
+  * 11 bit address space
+  * 11 bit `pc` program counter
+  * using BSRAM 2KB between 0x0000 and 0x07FF
+  * unlike the 4bit CPU, `r5` is not connected to the buttons, `r6` is not connected to the LED
+  * `S1` button works as the reset button
 
 ## How to run
 

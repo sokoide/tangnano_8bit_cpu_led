@@ -14,7 +14,6 @@ module top(
     logic [3:0]  btn;
     logic [23:0] counter;
     wire rst_n = !rst;
-    logic [7:0] pc_out;
 
     // Wire CPU - BSRAM
     // The CPU’s PC is output on "adr" (here 16 bits, but only the lower bits are used for addressing)
@@ -42,6 +41,7 @@ module top(
 
     // Program to load during boot
     initial begin
+        cpu_pc = 11'd0;
         boot_data[0] = 16'b0000_0000_1010_0001; // mvi 1
         boot_data[1] = 16'b0000_0000_01111_000; // lrotate r0
         boot_data[2] = 16'b0000_0000_01100_110; // inc r6
@@ -53,7 +53,9 @@ module top(
         boot_data[8] = 16'b0000_0000_01100_011; // inc r3
         boot_data[9] = 16'b0000_0000_00_100011; // mov r4, r3
         boot_data[10] = 16'b0000_0000_01100_100; // inc r4
-        boot_data[11] = 16'b0000_0000_1001_0001; // jmp 1
+        boot_data[11] = 16'b0000_0000_00_101100; // mov r5, r4
+        boot_data[12] = 16'b0000_0000_00_111101; // mov r7, r5
+        boot_data[13] = 16'b0000_0000_1001_0010; // jmp 2
     end
 
     // Boot process management
@@ -114,11 +116,10 @@ module top(
             .btn     ({7'b0000000, S2}),
             .counter (counter),
             .led     (led),
-            .adr     (cpu_pc),          // CPU’s program counter output drives the BSRAM in normal mode.
             .col     (col),
             .row     (row),
             .dout    (dout),
-            .pc_out  (pc_out)
+            .pc_out  (cpu_pc)
         );
 
     // update counter (for CPU timing)
@@ -146,7 +147,7 @@ module top(
                               .clk     	(clk),
                               .rst_n   	(rst_n    ),
                               .uart_tx 	(uart_tx  ),
-                              .pc    	(pc_out     )
+                              .pc       (cpu_pc    )
                           );
 
 endmodule

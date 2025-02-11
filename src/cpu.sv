@@ -4,11 +4,10 @@ module cpu(
         input  logic [7:0]   btn,
         input  logic [23:0]  counter,
         output logic [3:0]   led,
-        output logic [10:0]  adr,
         output logic [7:0]   col,
         output logic [7:0]   row,
         input  logic [15:0]  dout,
-        output logic [7:0]   pc_out
+        output logic [10:0]  pc_out
     );
 
     // Decode the instruction fields from dout.
@@ -21,12 +20,9 @@ module cpu(
 
 
     // Internal registers.
-    logic       c_flag;
-    logic [7:0] regs [7:0];
-
-    // Output assignments.
-    assign led = regs[6][3:0];
-    assign adr = regs[7][7:0]; // only the lower bits are used for addressing
+    logic           c_flag;
+    logic [7:0]     regs [7:0];
+    logic [15:0]    pc;
 
     // LED matrix control signals.
     // anode
@@ -38,13 +34,11 @@ module cpu(
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             // rst_n: clear selected registers and the flag.
-            {regs[0], regs[1], regs[2], regs[3], regs[4], regs[6], regs[7]} <= 8'd0;
+            {regs[0], regs[1], regs[2], regs[3], regs[4], regs[5], regs[6], regs[7]} <= 8'd0;
+            pc      <= 11'd0;
             c_flag  <= 1'b0;
         end
         else begin
-            // Update register 5 with the button input.
-            regs[5] <= btn;
-
             // Instruction decoding and execution.
             casez (op)
                 // MOV: Move the contents of regs[sss] to regs[op[2:0]].
@@ -89,13 +83,15 @@ module cpu(
 
                 // JNC: Jump if no carry; otherwise, increment PC.
                 5'b1000z: begin
-                    regs[7] <= (c_flag) ? (regs[7] + 1) & 8'hFF : {op[0], sss};
+                    // regs[7] <= (c_flag) ? (regs[7] + 1) & 8'hFF : {op[0], sss};
+                    pc <= (c_flag) ? (pc + 1) & 11'b111_1111_1111 : {op[0], sss};
                     c_flag  <= 1'b0;
                 end
 
                 // JMP: Unconditional jump.
                 5'b1001z:
-                    regs[7] <= {4'b0000, op[0], sss};
+                    // regs[7] <= {4'b0000, op[0], sss};
+                    pc <= {7'b0000000, op[0], sss};
 
                 // MVI: Move immediate value into regs[0].
                 5'b1010z:
@@ -108,10 +104,11 @@ module cpu(
 
             // PC Increment: If the opcode is not a jump instruction, increment the program counter.
             if (op[4:1] != 4'b1000 && op[4:1] != 4'b1001) begin
-                regs[7] <= (regs[7] + 1) & 8'hFF;
+                // regs[7] <= (regs[7] + 1) & 8'hFF;
+                pc <= (pc + 1) & 11'b111_1111_1111;
             end
 
-            pc_out <= regs[7];
+            pc_out <= pc;
         end
     end
 
