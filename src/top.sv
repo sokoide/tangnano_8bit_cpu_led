@@ -108,10 +108,18 @@ module top(
              );
 
 
+    // rPLL 50MHz
+    Gowin_rPLL rpll_inst(
+                   .clkout(clk50mhz),
+                   .clkin(clk)
+               );
+
     // The CPU uses cpu_instruction as its fetched instruction and outputs its program counter (cpu_pc).
     cpu cpu1 (
             .rst_n   (rst_n),
             .clk     (counter[22]),
+            .uart_clk(clk50mhz),
+            .uart_tx (uart_tx),
             .btn     ({7'b0000000, S2}),
             .counter (counter),
             .led     (led),
@@ -132,16 +140,10 @@ module top(
     // For display: drive LEDs (inverted internal led signal)
     assign leds = ~led;
 
-    // rPLL 50MHz
-    Gowin_rPLL rpll_inst(
-                   .clkout(clk50mhz),
-                   .clkin(clk)
-               );
-
     // uart 50MHz, 57600bps
-    uart_hello_example uart1(
-                           .clk    (clk50mhz),
-                           .rst_n  (rst_n),
-                           .uart_tx(uart_tx)
-                       );
+    // uart_hello_example uart1(
+    //                        .clk    (clk50mhz),
+    //                        .rst_n  (rst_n),
+    //                        .uart_tx(uart_tx)
+    //                    );
 endmodule
