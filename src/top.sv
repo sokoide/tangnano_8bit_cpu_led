@@ -14,8 +14,7 @@ module top(
     logic [3:0]  btn;
     logic [23:0] counter;
     wire rst_n = !rst;
-    logic [7:0] regs [7:0];
-    logic [7:0] reg7;
+    logic [7:0] pc_out;
 
     // Wire CPU - BSRAM
     // The CPU’s PC is output on "adr" (here 16 bits, but only the lower bits are used for addressing)
@@ -119,25 +118,15 @@ module top(
             .col     (col),
             .row     (row),
             .dout    (dout),
-            .reg7out  (reg7)
+            .pc_out  (pc_out)
         );
 
     // update counter (for CPU timing)
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             counter <= 24'd0;
-            // dummy data
-            regs[0] <= 16'd1;
-            regs[1] <= 16'd2;
-            regs[2] <= 16'd3;
-            regs[3] <= 16'd4;
-            regs[4] <= 16'd5;
-            regs[5] <= 16'd6;
-            regs[6] <= 16'd7;
-            regs[7] <= 16'd8;
         end
         else begin
-            regs[7] <= reg7;
             counter <= counter + 1;
         end
     end
@@ -157,7 +146,7 @@ module top(
                               .clk     	(clk),
                               .rst_n   	(rst_n    ),
                               .uart_tx 	(uart_tx  ),
-                              .regs    	(regs     )
+                              .pc    	(pc_out     )
                           );
 
 endmodule

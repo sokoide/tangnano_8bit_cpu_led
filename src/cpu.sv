@@ -8,7 +8,7 @@ module cpu(
         output logic [7:0]   col,
         output logic [7:0]   row,
         input  logic [15:0]  dout,
-        output logic [7:0]   reg7out
+        output logic [7:0]   pc_out
     );
 
     // Decode the instruction fields from dout.
@@ -111,7 +111,7 @@ module cpu(
                 regs[7] <= (regs[7] + 1) & 8'hFF;
             end
 
-            reg7out <= regs[7];
+            pc_out <= regs[7];
         end
     end
 

@@ -2,7 +2,7 @@ module uart_register_example (
         input  logic        clk,         // Clock input
         input  logic        rst_n,       // Reset input (active low)
         output logic        uart_tx,     // UART transmit pin
-        input  logic [7:0] regs[7:0]   // CPU module register array input
+        input  logic [7:0]  pc           // CPU module register array input
     );
 
     // Internal signal definitions
@@ -75,7 +75,7 @@ module uart_register_example (
 
         end
         else begin
-            reg_data <= regs[7];  // Fetch register data at the start of transmission
+            reg_data <= pc;  // Fetch register data at the start of transmission
 
             if (reg_data != reg_data_prev) begin
                 reg_data_prev <= reg_data;
