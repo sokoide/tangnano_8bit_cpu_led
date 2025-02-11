@@ -64,7 +64,7 @@ module uart_hello_example (
             if (!send_start) begin
                 // Wait for 1 second (wait_cnt reaches clock cycles for 1 second)
                 wait_cnt <= wait_cnt + 32'd1;
-                if (wait_cnt >= 50_000_000) begin  // 1 second delay for 50MHz clock
+                if (wait_cnt >= 27_000_000) begin  // 1 second delay
                     wait_cnt <= 32'd0;
                     send_start <= 1'b1;
                 end

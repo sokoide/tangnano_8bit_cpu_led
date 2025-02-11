@@ -121,8 +121,18 @@ module top(
 
     // update counter (for CPU timing)
     always_ff @(posedge clk or negedge rst_n) begin
-        if (!rst_n)
+        if (!rst_n) begin
             counter <= 24'd0;
+            // dummy data
+            regs[0] <= 16'd1;
+            regs[1] <= 16'd2;
+            regs[2] <= 16'd3;
+            regs[3] <= 16'd4;
+            regs[4] <= 16'd5;
+            regs[5] <= 16'd6;
+            regs[6] <= 16'd7;
+            regs[7] <= 16'd8;
+        end
         else
             counter <= counter + 1;
     end
@@ -130,9 +140,21 @@ module top(
     // For display: drive LEDs (inverted internal led signal)
     assign leds = ~led;
 
-    uart_hello_example uart1(
-                           .clk    (clk),
-                           .rst_n  (rst_n),
-                           .uart_tx(uart_tx)
-                       );
+    // UART
+    // uart_hello_example uart1(
+    //                        .clk    (clk),
+    //                        .rst_n  (rst_n),
+    //                        .uart_tx(uart_tx)
+    //                    );
+    // output declaration of module uart_register_example
+
+    logic [15:0] regs [7:0];
+
+    uart_register_example u_uart_register_example(
+                              .clk     	(clk),
+                              .rst_n   	(rst_n    ),
+                              .uart_tx 	(uart_tx  ),
+                              .regs    	(regs     )
+                          );
+
 endmodule
