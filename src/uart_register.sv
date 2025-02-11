@@ -53,22 +53,7 @@ module uart_register_example (
             send_start <= 1'b0;
             reg_data <= 16'd0;
             reg_data_prev <= 16'd0;
-            send_data[0]  <= 8'h72;  // 'r'
-            send_data[1]  <= 8'h65;  // 'e'
-            send_data[2]  <= 8'h67;  // 'g'
-            send_data[3]  <= 8'h73;  // 's'
-            send_data[4]  <= 8'h5b;  // '['
-            send_data[5]  <= 8'h37;  // '7'
-            send_data[6]  <= 8'h5d;  // ']'
-            send_data[7]  <= 8'h3d;  // '='
-            send_data[8]  <= 8'h30;  // '0'
-            send_data[9]  <= 8'h78;  // 'x'
-            send_data[10] <= 8'h30;  // '0'
-            send_data[11] <= 8'h30;  // '0'
-            send_data[12] <= 8'h30;  // '0'
-            send_data[13] <= 8'h30;  // '0'
-            send_data[14] <= 8'h0D;  // '\r'
-            send_data[15] <= 8'h0A;  // '\n'
+            send_data = "Regs[7]=0x0000\r\n";
         end
         else begin
             reg_data <= regs[7];  // Fetch register data at the start of transmission
@@ -81,8 +66,8 @@ module uart_register_example (
                 send_data[11]  <= (reg_data[11:8]  > 9) ? (8'h41 + reg_data[11:8]  - 10) : (8'h30 + reg_data[11:8]);
                 send_data[12] <= (reg_data[7:4]   > 9) ? (8'h41 + reg_data[7:4]   - 10) : (8'h30 + reg_data[7:4]);
                 send_data[13] <= (reg_data[3:0]   > 9) ? (8'h41 + reg_data[3:0]   - 10) : (8'h30 + reg_data[3:0]);
-                send_data[14] <= 8'h0A;  // Newline or other end-of-line marker
-                send_data[15] <= 8'h0D;  // Carriage return or other end-of-line marker
+                send_data[14] <= 8'h0D;
+                send_data[15] <= 8'h0A;
 
                 send_start <= 1'b1;
             end
