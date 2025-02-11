@@ -132,9 +132,15 @@ module top(
     // For display: drive LEDs (inverted internal led signal)
     assign leds = ~led;
 
+    // rPLL 50MHz
+    Gowin_rPLL rpll_inst(
+                   .clkout(clkout), //output clkout
+                   .clkin(clk) //input clkin
+               );
+
     // uart
     uart uart1(
-             .clk    (clk),
+             .clk    (clkout),
              .rst_n  (rst_n),
              .uart_tx(uart_tx),
              .uart_rx(uart_rx)

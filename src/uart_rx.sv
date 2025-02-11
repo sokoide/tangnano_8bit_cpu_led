@@ -29,8 +29,7 @@ module uart_rx #(
     logic [2:0] bit_cnt;             // Bit counter
 
     // Detect falling edge on rx_pin
-    wire rx_negedge = rx_d0 && ~rx_d1;
-    // assign rx_negedge = rx_d1 && ~rx_d0;
+    wire rx_negedge = rx_d1 && ~rx_d0;
 
     // Synchronize and delay rx_pin
     always_ff @(posedge clk or negedge rst_n) begin
@@ -77,7 +76,7 @@ module uart_rx #(
             end
 
             S_STOP: begin
-                if (cycle_cnt == CYCLE / 2 - 1)
+                if (cycle_cnt == CYCLE - 1) // 修正: CYCLE - 1 で判定
                     next_state = S_DATA;
                 else
                     next_state = S_STOP;

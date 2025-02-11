@@ -5,7 +5,7 @@ module uart(
         output logic       uart_tx
     );
 
-    parameter int CLK_FRE = 27_000_000;
+    parameter int CLK_FRE = 50_000_000;
     parameter int UART_FRE = 57600;
 
     localparam int IDLE = 0;
@@ -17,6 +17,7 @@ module uart(
     logic tx_data_valid;
     logic [7:0] tx_cnt;
     logic [7:0] rx_data;
+    logic [7:0] lower_case_rx_data; // 追加: 小文字変換後のデータ
     logic tx_data_ready;
     logic rx_data_valid;
     logic rx_data_ready;
@@ -61,7 +62,7 @@ module uart(
 
                     if (rx_data_valid) begin
                         tx_data_valid <= 1'b1;
-                        tx_data <= rx_data;  // send
+                        tx_data <= lower_case_rx_data;  // 修正: 小文字に変換されたデータを送信
                     end
                     else if (tx_data_valid && tx_data_ready) begin
                         tx_data_valid <= 1'b0;
@@ -96,6 +97,11 @@ module uart(
                 .rx_data_ready(rx_data_ready),
                 .rx_pin(uart_rx)
             );
+
+    to_lower to_lower_inst (  // 追加: 小文字変換モジュールのインスタンス化
+                 .in_char(rx_data),
+                 .out_char(lower_case_rx_data)
+             );
 
     uart_tx #(
                 .CLK_FRE(CLK_FRE),
