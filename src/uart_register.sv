@@ -9,6 +9,7 @@ module uart_register_example (
     logic        tx_en;
     logic [2:0]  waddr;
     logic [7:0]  wdata;
+    logic        TxRDYn;
     logic        tx_rdy;
     logic [31:0] wait_cnt;
     logic [4:0]  send_idx;

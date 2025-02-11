@@ -9,6 +9,7 @@ module uart_hello_example (
     logic [2:0]  waddr;
     logic [7:0]  wdata;
     logic        tx_rdy;
+    logic        TxRDYn;
     logic [31:0] wait_cnt;
     logic [3:0]  send_idx;
     logic        send_start;

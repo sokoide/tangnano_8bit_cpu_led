@@ -1,7 +1,7 @@
 module cpu(
         input  logic         rst_n,
         input  logic         clk,
-        input  logic [8:0]   btn,
+        input  logic [7:0]   btn,
         input  logic [23:0]  counter,
         output logic [3:0]   led,
         output logic [10:0]  adr,
@@ -70,7 +70,7 @@ module cpu(
 
                 // INC: Increment regs[sss] and update carry flag if overflow.
                 5'b01100: begin
-                    regs[sss] <= regs[sss] + 1;
+                    regs[sss] <= (regs[sss] + 1) & 16'hFFFF;
                     c_flag    <= ((regs[sss] + 1) > 8'hFF) ? 1'b1 : 1'b0;
                 end
 
@@ -88,7 +88,7 @@ module cpu(
 
                 // JNC: Jump if no carry; otherwise, increment PC.
                 5'b1000z: begin
-                    regs[7] <= (c_flag) ? (regs[7] + 1) : {op[0], sss};
+                    regs[7] <= (c_flag) ? (regs[7] + 1) & 16'hFFFF : {op[0], sss};
                     c_flag  <= 1'b0;
                 end
 
@@ -107,7 +107,7 @@ module cpu(
 
             // PC Increment: If the opcode is not a jump instruction, increment the program counter.
             if (op[4:1] != 4'b1000 && op[4:1] != 4'b1001) begin
-                regs[7] <= regs[7] + 1;
+                regs[7] <= (regs[7] + 1) & 16'hFFFF;
             end
         end
     end

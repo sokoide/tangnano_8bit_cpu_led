@@ -77,7 +77,7 @@ module top(
                     boot_mode <= 0;  // End boot process after writing all data
                 end
                 else begin
-                    boot_addr <= boot_addr + 1;
+                    boot_addr <= (boot_addr + 1) & 11'h7FF;
                     boot_write <= 1;  // Enable write for the next address
                 end
             end
