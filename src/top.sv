@@ -134,19 +134,13 @@ module top(
 
     // rPLL 50MHz
     Gowin_rPLL rpll_inst(
-                   .clkout(clkout), //output clkout
-                   .clkin(clk) //input clkin
+                   .clkout(clk50mhz),
+                   .clkin(clk)
                );
 
     // uart 50MHz, 57600bps
-    // uart uart1(
-    //          .clk    (clkout),
-    //          .rst_n  (rst_n),
-    //          .uart_tx(uart_tx),
-    //          .uart_rx(uart_rx)
-    //      );
     uart_hello_example uart1(
-                           .clk    (clkout),
+                           .clk    (clk50mhz),
                            .rst_n  (rst_n),
                            .uart_tx(uart_tx)
                        );
