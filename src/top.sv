@@ -14,6 +14,8 @@ module top(
     logic [3:0]  btn;
     logic [23:0] counter;
     wire rst_n = !rst;
+    logic [15:0] regs [7:0];
+    logic [15:0] reg7;
 
     // Wire CPU - BSRAM
     // The CPU’s PC is output on "adr" (here 16 bits, but only the lower bits are used for addressing)
@@ -109,14 +111,15 @@ module top(
     // The CPU uses cpu_instruction as its fetched instruction and outputs its program counter (cpu_pc).
     cpu cpu1 (
             .rst_n   (rst_n),
-            .clk     (counter[22]),
+            .clk     (counter[23]),
             .btn     ({7'b0000000, S2}),
             .counter (counter),
             .led     (led),
             .adr     (cpu_pc),          // CPU’s program counter output drives the BSRAM in normal mode.
             .col     (col),
             .row     (row),
-            .dout    (dout)
+            .dout    (dout),
+            .reg7out  (reg7)
         );
 
     // update counter (for CPU timing)
@@ -133,8 +136,10 @@ module top(
             regs[6] <= 16'd7;
             regs[7] <= 16'd8;
         end
-        else
+        else begin
+            regs[7] <= reg7;
             counter <= counter + 1;
+        end
     end
 
     // For display: drive LEDs (inverted internal led signal)
@@ -147,8 +152,6 @@ module top(
     //                        .uart_tx(uart_tx)
     //                    );
     // output declaration of module uart_register_example
-
-    logic [15:0] regs [7:0];
 
     uart_register_example u_uart_register_example(
                               .clk     	(clk),

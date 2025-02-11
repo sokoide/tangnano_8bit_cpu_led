@@ -2,7 +2,7 @@ module uart_register_example (
         input  logic        clk,         // Clock input
         input  logic        rst_n,       // Reset input (active low)
         output logic        uart_tx,     // UART transmit pin
-        input  logic [15:0] regs [7:0]   // CPU module register array input
+        input  logic [15:0] regs[7:0]   // CPU module register array input
     );
 
     // Internal signal definitions
