@@ -138,12 +138,16 @@ module top(
                    .clkin(clk) //input clkin
                );
 
-    // uart
-    uart uart1(
-             .clk    (clkout),
-             .rst_n  (rst_n),
-             .uart_tx(uart_tx),
-             .uart_rx(uart_rx)
-         );
-
+    // uart 50MHz, 57600bps
+    // uart uart1(
+    //          .clk    (clkout),
+    //          .rst_n  (rst_n),
+    //          .uart_tx(uart_tx),
+    //          .uart_rx(uart_rx)
+    //      );
+    uart_hello_example uart1(
+                           .clk    (clkout),
+                           .rst_n  (rst_n),
+                           .uart_tx(uart_tx)
+                       );
 endmodule
