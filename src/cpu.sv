@@ -1,8 +1,6 @@
 module cpu(
         input  logic         rst_n,
         input  logic         clk,
-        input  logic         uart_clk,
-        output logic         uart_tx,
         input  logic [8:0]   btn,
         input  logic [23:0]  counter,
         output logic [3:0]   led,
@@ -113,12 +111,5 @@ module cpu(
             end
         end
     end
-
-    uart_register_example u_uart_register_example(
-                              .clk     	(uart_clk ),
-                              .rst_n   	(rst_n    ),
-                              .uart_tx 	(uart_tx  ),
-                              .regs    	(regs     )
-                          );
 
 endmodule

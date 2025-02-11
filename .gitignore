@@ -5,6 +5,7 @@ impl/*
 obj_dir/*
 *.user
 waveform.vcd
+*_tmp.v
 
 ### macOS ###
 # General
