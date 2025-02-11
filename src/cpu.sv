@@ -8,7 +8,7 @@ module cpu(
         output logic [7:0]   col,
         output logic [7:0]   row,
         input  logic [15:0]  dout,
-        output logic [15:0]  reg7out
+        output logic [7:0]   reg7out
     );
 
     // Decode the instruction fields from dout.
@@ -21,12 +21,12 @@ module cpu(
 
 
     // Internal registers.
-    logic        c_flag;
-    logic [15:0]  regs [7:0];
+    logic       c_flag;
+    logic [7:0] regs [7:0];
 
     // Output assignments.
     assign led = regs[6][3:0];
-    assign adr = regs[7][10:0]; // only the lower bits are used for addressing
+    assign adr = regs[7][7:0]; // only the lower bits are used for addressing
 
     // LED matrix control signals.
     // anode
@@ -38,7 +38,7 @@ module cpu(
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             // rst_n: clear selected registers and the flag.
-            {regs[0], regs[1], regs[2], regs[3], regs[4], regs[6], regs[7]} <= 16'd0;
+            {regs[0], regs[1], regs[2], regs[3], regs[4], regs[6], regs[7]} <= 8'd0;
             c_flag  <= 1'b0;
         end
         else begin
@@ -71,7 +71,7 @@ module cpu(
 
                 // INC: Increment regs[sss] and update carry flag if overflow.
                 5'b01100: begin
-                    regs[sss] <= (regs[sss] + 1) & 16'hFFFF;
+                    regs[sss] <= (regs[sss] + 1) & 8'hFF;
                     c_flag    <= ((regs[sss] + 1) > 8'hFF) ? 1'b1 : 1'b0;
                 end
 
@@ -89,7 +89,7 @@ module cpu(
 
                 // JNC: Jump if no carry; otherwise, increment PC.
                 5'b1000z: begin
-                    regs[7] <= (c_flag) ? (regs[7] + 1) & 16'hFFFF : {op[0], sss};
+                    regs[7] <= (c_flag) ? (regs[7] + 1) & 8'hFF : {op[0], sss};
                     c_flag  <= 1'b0;
                 end
 
@@ -108,7 +108,7 @@ module cpu(
 
             // PC Increment: If the opcode is not a jump instruction, increment the program counter.
             if (op[4:1] != 4'b1000 && op[4:1] != 4'b1001) begin
-                regs[7] <= (regs[7] + 1) & 16'hFFFF;
+                regs[7] <= (regs[7] + 1) & 8'hFF;
             end
 
             reg7out <= regs[7];

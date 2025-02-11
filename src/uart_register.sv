@@ -2,7 +2,7 @@ module uart_register_example (
         input  logic        clk,         // Clock input
         input  logic        rst_n,       // Reset input (active low)
         output logic        uart_tx,     // UART transmit pin
-        input  logic [15:0] regs[7:0]   // CPU module register array input
+        input  logic [7:0] regs[7:0]   // CPU module register array input
     );
 
     // Internal signal definitions
@@ -14,8 +14,8 @@ module uart_register_example (
     logic [4:0]  send_idx;
     logic        send_start;
     logic        tx_en_pulse;
-    logic [15:0] reg_data;
-    logic [15:0] reg_data_prev;
+    logic [7:0]  reg_data;
+    logic [7:0]  reg_data_prev;
     logic [7:0]  send_data [0:15];
 
     // UART_MASTER_Top instance
@@ -45,15 +45,34 @@ module uart_register_example (
     // Set tx_rdy based on the inverted state of TxRDYn if active low
     assign tx_rdy = ~TxRDYn;
 
+    initial begin
+        for (int i = 0; i < 16; i++)
+            send_data[i] <= 8'h00;
+    end
     // Initialize send_data once at the start of transmission
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             send_idx <= 5'd0;
             tx_en <= 1'b0;
             send_start <= 1'b0;
-            reg_data <= 16'd0;
-            reg_data_prev <= 16'd0;
-            send_data = "Regs[7]=0x0000\r\n";
+            reg_data <= 8'd0;
+            reg_data_prev <= 8'd0;
+            send_data[0] <= "P";
+            send_data[1] <= "C";
+            send_data[2] <= " ";
+            send_data[3] <= " ";
+            send_data[4] <= " ";
+            send_data[5] <= " ";
+            send_data[6] <= " ";
+            send_data[7] <= "=";
+            send_data[8] <= "0";
+            send_data[9] <= "x";
+            send_data[10] <= "X";
+            send_data[11] <= "X";
+            send_data[12] <= 8'h0D;
+            send_data[13] <= 8'h0A;
+            send_data[14] <= 8'h00;
+
         end
         else begin
             reg_data <= regs[7];  // Fetch register data at the start of transmission
@@ -62,24 +81,21 @@ module uart_register_example (
                 reg_data_prev <= reg_data;
 
                 // Prepare the dynamic bits "XXXXXXXX"
-                send_data[10]  <= (reg_data[15:12] > 9) ? (8'h41 + reg_data[15:12] - 10) : (8'h30 + reg_data[15:12]);
-                send_data[11]  <= (reg_data[11:8]  > 9) ? (8'h41 + reg_data[11:8]  - 10) : (8'h30 + reg_data[11:8]);
-                send_data[12] <= (reg_data[7:4]   > 9) ? (8'h41 + reg_data[7:4]   - 10) : (8'h30 + reg_data[7:4]);
-                send_data[13] <= (reg_data[3:0]   > 9) ? (8'h41 + reg_data[3:0]   - 10) : (8'h30 + reg_data[3:0]);
-                send_data[14] <= 8'h0D;
-                send_data[15] <= 8'h0A;
-
+                send_data[10] <= (reg_data[7:4]   > 9) ? (8'h41 + reg_data[7:4]   - 10) : (8'h30 + reg_data[7:4]);
+                send_data[11] <= (reg_data[3:0]   > 9) ? (8'h41 + reg_data[3:0]   - 10) : (8'h30 + reg_data[3:0]);
+                send_data[12] <= 8'h0D;
+                send_data[13] <= 8'h0A;
+                send_data[14] <= 8'h00;
                 send_start <= 1'b1;
             end
 
             if (send_start && tx_rdy && !tx_en) begin
-                // Send each character from the prepared string
+                // only send until 0x00 is reached
                 waddr <= 3'b000;            // Write address (TX buffer)
                 wdata <= send_data[send_idx];  // Set current data
                 tx_en <= 1'b1;              // Set transmission enable flag
                 send_idx <= send_idx + 5'd1;
-                // only send 16 characters
-                if (send_idx == 5'd15) begin
+                if (send_data[send_idx] == 8'h00) begin
                     send_idx <= 5'd0;       // Reset after all data sent
                     send_start <= 1'b0;     // Send completed
                 end

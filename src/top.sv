@@ -14,8 +14,8 @@ module top(
     logic [3:0]  btn;
     logic [23:0] counter;
     wire rst_n = !rst;
-    logic [15:0] regs [7:0];
-    logic [15:0] reg7;
+    logic [7:0] regs [7:0];
+    logic [7:0] reg7;
 
     // Wire CPU - BSRAM
     // The CPU’s PC is output on "adr" (here 16 bits, but only the lower bits are used for addressing)
