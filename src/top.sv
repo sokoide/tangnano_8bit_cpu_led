@@ -1,136 +1,240 @@
 module top(
-  input  logic       clk,
-  input  logic       rst,
-  input  logic       S1,
-  input  logic       S2,
-  output logic [5:0] leds,
-  output logic [7:0] col,
-  output logic [7:0] row
-);
+        input  logic       clk,
+        input  logic       rst, // active high
+        input  logic       S1,
+        input  logic       S2,
+        input  logic       uart_rx,
+        output logic       uart_tx,
+        output logic [5:0] leds,
+        output logic [7:0] col,
+        output logic [7:0] row
+    );
 
-  // internal signals
-  logic [3:0]  led;
-  logic [3:0]  btn;
-  logic [23:0] counter;
+    // internal signals
+    logic [3:0]  led;
+    logic [3:0]  btn;
+    logic [23:0] counter;
+    wire rst_n = !rst;
 
-  // Wire CPU - BSRAM
-  // The CPU’s PC is output on "adr" (here 16 bits, but only the lower bits are used for addressing)
-  logic [10:0] cpu_pc;              // CPU program counter
-  logic [15:0] cpu_instruction;     // registered instruction to feed the CPU
-  logic [15:0] din;                 // memory write data (unused during normal read)
-  logic [15:0] dout;
+    // Wire CPU - BSRAM
+    // The CPU’s PC is output on "adr" (here 16 bits, but only the lower bits are used for addressing)
+    logic [10:0] cpu_pc;              // CPU program counter
+    logic [15:0] cpu_instruction;     // registered instruction to feed the CPU
+    logic [15:0] din;                 // memory write data (unused during normal read)
+    logic [15:0] dout;
 
-  // BSRAM control signals
-  logic ce;   // chip enable
-  logic wre;  // write enable
-  logic oce;  // output enable
+    // BSRAM control signals
+    logic ce;   // chip enable
+    logic wre;  // write enable
+    logic oce;  // output enable
 
 
-  // Set the constant for output enable.
-  assign oce = 1'b1;
+    // Set the constant for output enable.
+    assign oce = 1'b1;
 
-  // Create a register for the bootloader address and a signal to indicate boot mode.
-  logic [10:0] boot_addr;
-  logic        boot_mode;  // 1 during boot, 0 after boot is done
-  logic        boot_write; // Internal signal to control when to write
+    // Create a register for the bootloader address and a signal to indicate boot mode.
+    logic [10:0] boot_addr;
+    logic        boot_mode;  // 1 during boot, 0 after boot is done
+    logic        boot_write; // Internal signal to control when to write
 
-  // Bootloader state machine signals
-  logic [15:0] boot_data [0:15];
+    // Bootloader state machine signals
+    logic [15:0] boot_data [0:15];
 
-  // Program to load during boot
-  initial begin
-    boot_data[0] = 16'b0000_0000_1010_0001; // mvi 1
-    boot_data[1] = 16'b0000_0000_01111_000; // lrotate r0
-    boot_data[2] = 16'b0000_0000_01100_110; // inc r6
-    boot_data[3] = 16'b0000_0000_00_001000; // mov r1, r0
-    boot_data[4] = 16'b0000_0000_01100_001; // inc r1
-    boot_data[5] = 16'b0000_0000_00_010001; // mov r2, r1
-    boot_data[6] = 16'b0000_0000_01100_010; // inc r2
-    boot_data[7] = 16'b0000_0000_00_011010; // mov r3, r2
-    boot_data[8] = 16'b0000_0000_01100_011; // inc r3
-    boot_data[9] = 16'b0000_0000_00_100011; // mov r4, r3
-    boot_data[10] = 16'b0000_0000_01100_100; // inc r4
-    boot_data[11] = 16'b0000_0000_1001_0001; // jmp 1
-  end
-
-  // Boot process management
-  always_ff @(posedge clk or negedge rst) begin
-    if (!rst) begin
-      boot_addr  <= 0;
-      boot_mode  <= 1;
-      ce         <= 1;
-      wre        <= 0;
-      boot_write <= 1;
-    end else if (boot_mode) begin
-      if (boot_write) begin
-        din <= boot_data[boot_addr];
-        ce  <= 1;
-        wre <= 1;
-        boot_write <= 0;  // Prevent immediate increment in the same cycle
-      end else begin
-        wre <= 0;  // Disable write after one cycle
-        if (boot_addr == 11'd15) begin
-          boot_mode <= 0;  // End boot process after writing all data
-        end else begin
-          boot_addr <= boot_addr + 1;
-          boot_write <= 1;  // Enable write for the next address
-        end
-      end
-    end else begin
-      ce  <= 1;  // Normal operation mode
-      wre <= 0;  // No write during normal operation
+    // Program to load during boot
+    initial begin
+        boot_data[0] = 16'b0000_0000_1010_0001; // mvi 1
+        boot_data[1] = 16'b0000_0000_01111_000; // lrotate r0
+        boot_data[2] = 16'b0000_0000_01100_110; // inc r6
+        boot_data[3] = 16'b0000_0000_00_001000; // mov r1, r0
+        boot_data[4] = 16'b0000_0000_01100_001; // inc r1
+        boot_data[5] = 16'b0000_0000_00_010001; // mov r2, r1
+        boot_data[6] = 16'b0000_0000_01100_010; // inc r2
+        boot_data[7] = 16'b0000_0000_00_011010; // mov r3, r2
+        boot_data[8] = 16'b0000_0000_01100_011; // inc r3
+        boot_data[9] = 16'b0000_0000_00_100011; // mov r4, r3
+        boot_data[10] = 16'b0000_0000_01100_100; // inc r4
+        boot_data[11] = 16'b0000_0000_1001_0001; // jmp 1
     end
-  end
 
-  // Multiplexer for the memory address.
-  // When boot_mode is active, use boot_addr; otherwise, use cpu_pc.
-  // (Assuming cpu_pc’s lower 11 bits are valid for addressing.)
-  logic [10:0] mem_addr;
-  assign mem_addr = boot_mode ? boot_addr : cpu_pc;
+    // Boot process management
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            boot_addr  <= 0;
+            boot_mode  <= 1;
+            ce         <= 1;
+            wre        <= 0;
+            boot_write <= 1;
+        end
+        else if (boot_mode) begin
+            if (boot_write) begin
+                din <= boot_data[boot_addr];
+                ce  <= 1;
+                wre <= 1;
+                boot_write <= 0;  // Prevent immediate increment in the same cycle
+            end
+            else begin
+                wre <= 0;  // Disable write after one cycle
+                if (boot_addr == 11'd15) begin
+                    boot_mode <= 0;  // End boot process after writing all data
+                end
+                else begin
+                    boot_addr <= boot_addr + 1;
+                    boot_write <= 1;  // Enable write for the next address
+                end
+            end
+        end
+        else begin
+            ce  <= 1;  // Normal operation mode
+            wre <= 0;  // No write during normal operation
+        end
+    end
 
-// BSRAM instance.
-  Gowin_SP bsram_inst (
-    .clk   (clk),
-    .oce   (oce),
-    .ce    (ce),
-    .reset (!rst),       // using rst here for consistency
-    .wre   (wre),
-    .ad    (mem_addr),
-    .din   (din),
-    .dout  (dout)
-  );
+    // Multiplexer for the memory address.
+    // When boot_mode is active, use boot_addr; otherwise, use cpu_pc.
+    // (Assuming cpu_pc’s lower 11 bits are valid for addressing.)
+    logic [10:0] mem_addr;
+    assign mem_addr = boot_mode ? boot_addr : cpu_pc;
 
-//   Gowin_pROM bsram_inst(
-//     .dout(dout), //output [15:0] dout
-//     .clk(clk), //input clk
-//     .oce(oce), //input oce
-//     .ce(ce), //input ce
-//     .reset(!rst), //input reset
-//     .ad(cpu_pc) //input [10:0] ad
-// );
+    // BSRAM instance.
+    Gowin_SP bsram_inst (
+                 .clk   (clk),
+                 .oce   (oce),
+                 .ce    (ce),
+                 .reset (rst),
+                 .wre   (wre),
+                 .ad    (mem_addr),
+                 .din   (din),
+                 .dout  (dout)
+             );
 
-  // The CPU uses cpu_instruction as its fetched instruction and outputs its program counter (cpu_pc).
-  cpu cpu1 (
-    .reset   (rst),
-    .clk     (counter[22]),
-    .btn     ({2'b00, S2, S1}),
-    .counter (counter),
-    .led     (led),
-    .adr     (cpu_pc),          // CPU’s program counter output drives the BSRAM in normal mode.
-    .col     (col),
-    .row     (row),
-    .dout    (dout)
-  );
 
-  // update counter (for CPU timing)
-  always_ff @(posedge clk or negedge rst) begin
-    if (!rst)
-      counter <= 24'd0;
-    else
-      counter <= counter + 1;
-  end
+    // The CPU uses cpu_instruction as its fetched instruction and outputs its program counter (cpu_pc).
+    cpu cpu1 (
+            .rst_n   (rst_n),
+            .clk     (counter[22]),
+            .btn     ({7'b0000000, S2}),
+            .counter (counter),
+            .led     (led),
+            .adr     (cpu_pc),          // CPU’s program counter output drives the BSRAM in normal mode.
+            .col     (col),
+            .row     (row),
+            .dout    (dout)
+        );
 
-  // For display: drive LEDs (inverted internal led signal)
-  assign leds = ~led;
+    // update counter (for CPU timing)
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+            counter <= 24'd0;
+        else
+            counter <= counter + 1;
+    end
+
+    // For display: drive LEDs (inverted internal led signal)
+    assign leds = ~led;
+
+    // uart
+    parameter int CLK_FRE = 27_000_000;
+    parameter int UART_FRE = 57600;
+
+    localparam int IDLE = 0;
+    localparam int SEND = 1;
+    localparam int WAIT = 2;
+
+    logic [7:0] tx_data;
+    logic [7:0] tx_str;
+    logic tx_data_valid;
+    logic [7:0] tx_cnt;
+    logic [7:0] rx_data;
+    logic tx_data_ready;
+    logic rx_data_valid;
+    logic rx_data_ready;
+    logic [31:0] wait_cnt;
+    logic [3:0] state;
+
+    assign rx_data_ready = 1'b1;  // ready to receive data
+
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            wait_cnt <= 32'd0;
+            tx_data <= 8'd0;
+            state <= IDLE;
+            tx_cnt <= 8'd0;
+            tx_data_valid <= 1'b0;
+        end
+        else begin
+            case (state)
+                IDLE: begin
+                    state <= SEND;
+                end
+
+                SEND: begin
+                    wait_cnt <= 32'd0;
+                    tx_data <= tx_str;
+
+                    if (tx_data_valid && tx_data_ready && tx_cnt < DATA_NUM - 1) begin
+                        tx_cnt <= tx_cnt + 8'd1;  // send counter
+                    end
+                    else if (tx_data_valid && tx_data_ready) begin
+                        tx_cnt <= 8'd0;
+                        tx_data_valid <= 1'b0;
+                        state <= WAIT;
+                    end
+                    else if (!tx_data_valid) begin
+                        tx_data_valid <= 1'b1;
+                    end
+                end
+
+                WAIT: begin
+                    wait_cnt <= wait_cnt + 32'd1;
+
+                    if (rx_data_valid) begin
+                        tx_data_valid <= 1'b1;
+                        tx_data <= rx_data;  // send
+                    end
+                    else if (tx_data_valid && tx_data_ready) begin
+                        tx_data_valid <= 1'b0;
+                    end
+                    else if (wait_cnt >= CLK_FRE) begin  // wait for a second
+                        state <= SEND;
+                    end
+                end
+
+                default:
+                    state <= IDLE;
+            endcase
+        end
+    end
+
+    // combination logic
+    parameter int DATA_NUM = 15;
+    logic [DATA_NUM * 8 - 1:0] send_data = {"Tang Nano 20K", 16'h0d0a};
+
+    always_comb begin
+        tx_str = send_data[(DATA_NUM - 1 - tx_cnt) * 8 +: 8];
+    end
+
+    uart_rx #(
+                .CLK_FRE(CLK_FRE),
+                .BAUD_RATE(UART_FRE)
+            ) uart_rx_inst (
+                .clk(clk),
+                .rst_n(rst_n),
+                .rx_data(rx_data),
+                .rx_data_valid(rx_data_valid),
+                .rx_data_ready(rx_data_ready),
+                .rx_pin(uart_rx)
+            );
+
+    uart_tx #(
+                .CLK_FRE(CLK_FRE),
+                .BAUD_RATE(UART_FRE)
+            ) uart_tx_inst (
+                .clk(clk),
+                .rst_n(rst_n),
+                .tx_data(tx_data),
+                .tx_data_valid(tx_data_valid),
+                .tx_data_ready(tx_data_ready),
+                .tx_pin(uart_tx)
+            );
 
 endmodule
