@@ -8,7 +8,10 @@ module cpu(
         output logic [7:0]   row,
         input  logic [15:0]  dout,
         output logic [10:0]  pc_out
-    );
+
+`ifdef DEBUG_MODE
+        , output logic [7:0] debug_regs [7:0]  // Debug output (only in debug mode)
+`endif    );
 
     // Decode the instruction fields from dout.
     logic [4:0] op;
@@ -23,6 +26,12 @@ module cpu(
     logic           c_flag;
     logic [7:0]     regs [7:0];
     logic [15:0]    pc;
+
+`ifdef DEBUG_MODE
+    // Assign debug output for testing
+    assign debug_regs = regs;
+`endif
+
 
     // LED matrix control signals.
     // anode

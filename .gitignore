@@ -7,6 +7,16 @@ obj_dir/*
 waveform.vcd
 *_tmp.v
 
+# dsim
+dsim_work/
+dsim.*
+dvlcom.*
+*.dpf
+metrics.db
+
+waveform.vcd
+waveform.view
+
 ### macOS ###
 # General
 .DS_Store

@@ -11,7 +11,6 @@ module top(
 
     // internal signals
     logic [3:0]  led;
-    logic [3:0]  btn;
     logic [23:0] counter;
     wire rst_n = !rst;
 
@@ -26,7 +25,6 @@ module top(
     logic ce;   // chip enable
     logic wre;  // write enable
     logic oce;  // output enable
-
 
     // Set the constant for output enable.
     assign oce = 1'b1;
