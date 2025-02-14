@@ -14,27 +14,19 @@ module top(
     logic [23:0] counter;
     wire rst_n = !rst;
 
-    // Wire CPU - BSRAM
-    // The CPU’s PC is output on "adr" (here 16 bits, but only the lower bits are used for addressing)
+    // CPU and BSRAM signals
     logic [10:0] cpu_pc;              // CPU program counter
     logic [15:0] cpu_instruction;     // registered instruction to feed the CPU
     logic [15:0] din;                 // memory write data (unused during normal read)
     logic [15:0] dout;
-
-    // BSRAM control signals
     logic ce;   // chip enable
     logic wre;  // write enable
-    logic oce;  // output enable
+    logic oce = 1'b1;  // output enable
 
-    // Set the constant for output enable.
-    assign oce = 1'b1;
-
-    // Create a register for the bootloader address and a signal to indicate boot mode.
+    // Bootloader signals
     logic [10:0] boot_addr;
     logic        boot_mode;  // 1 during boot, 0 after boot is done
     logic        boot_write; // Internal signal to control when to write
-
-    // Bootloader state machine signals
     logic [15:0] boot_data [0:15];
 
     // Program to load during boot
@@ -90,8 +82,6 @@ module top(
     end
 
     // Multiplexer for the memory address.
-    // When boot_mode is active, use boot_addr; otherwise, use cpu_pc.
-    // (Assuming cpu_pc’s lower 11 bits are valid for addressing.)
     logic [10:0] mem_addr;
     assign mem_addr = boot_mode ? boot_addr : cpu_pc;
 
@@ -107,7 +97,7 @@ module top(
                  .dout  (dout)
              );
 
-    // The CPU uses cpu_instruction as its fetched instruction and outputs its program counter (cpu_pc).
+    // CPU instance
     cpu cpu1 (
             .rst_n   (rst_n),
             .clk     (counter[23]),
@@ -120,7 +110,7 @@ module top(
             .pc_out  (cpu_pc)
         );
 
-    // update counter (for CPU timing)
+    // Update counter (for CPU timing)
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             counter <= 24'd0;
@@ -130,22 +120,15 @@ module top(
         end
     end
 
-    // For display: drive LEDs (inverted internal led signal)
+    // Drive LEDs (inverted internal led signal)
     assign leds = ~led;
 
-    // UART
-    // uart_hello_example uart1(
-    //                        .clk    (clk),
-    //                        .rst_n  (rst_n),
-    //                        .uart_tx(uart_tx)
-    //                    );
-    // output declaration of module uart_register_example
-
+    // UART instance
     uart_register_example u_uart_register_example(
                               .clk     	(clk),
-                              .rst_n   	(rst_n    ),
-                              .uart_tx 	(uart_tx  ),
-                              .pc       (cpu_pc    )
+                              .rst_n   	(rst_n),
+                              .uart_tx 	(uart_tx),
+                              .pc       (cpu_pc)
                           );
 
 endmodule

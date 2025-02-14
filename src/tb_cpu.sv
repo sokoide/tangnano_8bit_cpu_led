@@ -156,45 +156,37 @@ module tb_cpu;
         rst_n = 1; // release
         repeat (1) @(posedge clk); // add delta cycle for reg check
 
+        // Test sequence
         repeat (1) @(posedge clk);
-        $display("1 cycles");
-        if (counter !== 1) begin
-            $display("ERROR: Unexpected counter value: %b", counter);
-        end
-        if (reg0 !== 8'd0) begin
-            $display("ERROR: Unexpected reg0 value: %b", reg0);
-        end
+        check_state(1, 8'd0);
 
         repeat (1) @(posedge clk);
-        $display("2 cycles");
-        if (reg0 !== 8'd1) begin
-            $display("ERROR: Unexpected reg0 value: %b", reg0);
-        end
+        check_state(2, 8'd1);
 
         repeat (1) @(posedge clk);
-        $display("2 cycles");
-        if (reg0 !== 8'd1) begin
-            $display("ERROR: Unexpected reg0 value: %b", reg0);
-        end
+        check_state(3, 8'd1);
 
         repeat (1) @(posedge clk);
-        $display("3 cycles");
-        if (reg0 !== 8'd2) begin
-            $display("ERROR: Unexpected reg0 value: %b", reg0);
-        end
+        check_state(4, 8'd2);
 
         repeat (1) @(posedge clk);
-        $display("1 cycle");
-        if (reg0 !== 8'd4) begin
-            $display("ERROR: Unexpected reg0 value: %b", reg0);
-            // $stop;
-        end
+        check_state(5, 8'd4);
 
         // get traces some more in the vcd
         repeat (40) @(posedge clk);
 
-        $display("All Test Passed");
+        $display("=== Test End ===");
         $finish;
     end
+
+    task check_state(input int expected_counter, input [7:0] expected_reg0);
+        $display("[%04d]", counter);
+        if (counter !== expected_counter) begin
+            $display("ERROR: Unexpected counter value: %d", counter);
+        end
+        if (reg0 !== expected_reg0) begin
+            $display("ERROR: Unexpected reg0 value: %d", reg0);
+        end
+    endtask
 
 endmodule
