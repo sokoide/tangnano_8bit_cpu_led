@@ -1,6 +1,6 @@
 module to_lower (
-    input  logic [7:0] in_char,
-    output logic [7:0] out_char
+  input  logic [7:0] in_char,
+  output logic [7:0] out_char
 );
 
   always_comb begin

@@ -35,7 +35,7 @@ module tb_cpu;
   logic        boot_mode;  // 1 during boot, 0 after boot is done
   logic        boot_write;  // Internal signal to control when to write
 
-  logic [15:0] boot_data                                               [17];
+  logic [15:0] boot_data                                               [18];
   localparam int unsigned BootDataLength = $bits(boot_data) / $bits(boot_data[0]);
 
   // Program to load during boot
@@ -76,7 +76,7 @@ module tb_cpu;
         boot_write <= 0;  // Prevent immediate increment in the same cycle
       end else begin
         wre <= 0;  // Disable write after one cycle
-        if (boot_addr == boot_data_length) begin
+        if (boot_addr == BootDataLength) begin
           boot_mode <= 0;  // End boot process after writing all data
         end else begin
           boot_addr  <= (boot_addr + 1) & 11'h7FF;
@@ -97,30 +97,30 @@ module tb_cpu;
 
   // BSRAM instance.
   Gowin_SP bsram_inst (
-      .clk  (clk),
-      .oce  (oce),
-      .ce   (ce),
-      .reset(rst),
-      .wre  (wre),
-      .ad   (mem_addr),
-      .din  (din),
-      .dout (dout)
+    .clk(clk),
+    .oce(oce),
+    .ce(ce),
+    .reset(rst),
+    .wre(wre),
+    .ad(mem_addr),
+    .din(din),
+    .dout(dout)
   );
 
   // DUT (Device Under Test)
   cpu dut (
-      .rst_n     (rst_n),
-      .boot_mode (boot_mode),
-      .clk       (counter[1]),
-      .counter   (counter),
-      .led       (led),
-      .col       (col),
-      .row       (row),
-      .dout      (dout),
-      .pc_out    (cpu_pc)
-`ifdef DEBUG_MODE,
-      .debug_regs(regs)
+`ifdef DEBUG_MODE
+    .debug_regs(regs),
 `endif
+    .rst_n(rst_n),
+    .boot_mode(boot_mode),
+    .clk(counter[1]),
+    .counter(counter),
+    .led(led),
+    .col(col),
+    .row(row),
+    .dout(dout),
+    .pc_out(cpu_pc)
   );
 
   // update counter
