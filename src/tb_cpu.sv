@@ -1,6 +1,6 @@
 module tb_cpu;
   // signals for test
-  logic clk;
+  logic clk_mem;
   logic rst_n;
   logic [3:0] led;
   logic [23:0] counter;
@@ -57,7 +57,7 @@ module tb_cpu;
   end
 
   // Boot process management
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk_mem or negedge rst_n) begin
     if (!rst_n) begin
       boot_addr  <= 0;
       boot_mode  <= 1;
@@ -93,7 +93,7 @@ module tb_cpu;
 
   // BSRAM instance.
   Gowin_SP bsram_inst (
-      .clk  (clk),
+      .clk  (clk_mem),
       .oce  (oce),
       .ce   (ce),
       .reset(rst),
@@ -106,8 +106,7 @@ module tb_cpu;
   // DUT (Device Under Test)
   cpu dut (
       .rst_n     (rst_n),
-      .clk       (clk),
-      .btn       ({8'b0000000}),
+      .clk       (counter[1]),
       .counter   (counter),
       .led       (led),
       .col       (col),
@@ -119,8 +118,8 @@ module tb_cpu;
 `endif
   );
 
-  // update counter (for CPU timing)
-  always_ff @(posedge clk or negedge rst_n) begin
+  // update counter
+  always_ff @(posedge clk_mem or negedge rst_n) begin
     if (!rst_n) begin
       counter <= 24'd0;
     end else begin
@@ -136,38 +135,38 @@ module tb_cpu;
   end
 
   // 20ns clock (#10 means 10ns)
-  always #10 clk = ~clk;
+  always #10 clk_mem = ~clk_mem;
 
   // test
   initial begin
-    clk = 0;
-    @(posedge clk);  // wait for 1 clock cycle before starting the test
+    clk_mem = 0;
+    @(posedge clk_mem);  // wait for 1 clock cycle before starting the test
 
     $display("=== Test Start ===");
 
     rst_n = 0;  // active
-    @(posedge clk);  // wait for 1 clock cycle
+    @(posedge clk_mem);  // wait for 1 clock cycle
     rst_n = 1;  // release
-    repeat (20) @(posedge clk);
+    repeat (20) @(posedge clk_mem);
 
     // Test sequence
-    repeat (1) @(posedge clk);
+    repeat (1) @(posedge clk_mem);
     check_state(1, 8'd0);
 
-    repeat (1) @(posedge clk);
+    repeat (1) @(posedge clk_mem);
     check_state(2, 8'd1);
 
-    repeat (1) @(posedge clk);
+    repeat (1) @(posedge clk_mem);
     check_state(3, 8'd1);
 
-    repeat (1) @(posedge clk);
+    repeat (1) @(posedge clk_mem);
     check_state(4, 8'd2);
 
-    repeat (1) @(posedge clk);
+    repeat (1) @(posedge clk_mem);
     check_state(5, 8'd4);
 
     // get traces some more in the vcd
-    repeat (40) @(posedge clk);
+    repeat (40) @(posedge clk_mem);
 
     $display("=== Test End ===");
     $finish;

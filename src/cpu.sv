@@ -1,7 +1,6 @@
 module cpu(
   input  logic     rst_n,
   input  logic     clk,
-  input  logic [7:0]   btn,
   input  logic [23:0]  counter,
   output logic [3:0]   led,
   output logic [7:0]   col,
@@ -23,7 +22,7 @@ module cpu(
 
 
   // Internal registers.
-  logic       c_flag;
+  logic         c_flag;
   logic [7:0]   regs [7:0];
   logic [15:0]  pc;
 
@@ -93,7 +92,7 @@ module cpu(
         // JNC: Jump if no carry; otherwise, increment PC.
         5'b1000z: begin
           // regs[7] <= (c_flag) ? (regs[7] + 1) & 8'hFF : {op[0], sss};
-          pc <= (c_flag) ? (pc + 1) & 11'b111_1111_1111 : {op[0], sss};
+          pc <= (c_flag) ? (pc + 2) & 11'b111_1111_1111 : {op[0], sss};
           c_flag  <= 1'b0;
         end
 
@@ -114,7 +113,7 @@ module cpu(
       // PC Increment: If the opcode is not a jump instruction, increment the program counter.
       if (op[4:1] != 4'b1000 && op[4:1] != 4'b1001) begin
         // regs[7] <= (regs[7] + 1) & 8'hFF;
-        pc <= (pc + 1) & 11'b111_1111_1111;
+        pc <= (pc + 2) & 11'b111_1111_1111;
       end
 
       pc_out <= pc;
