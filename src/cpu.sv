@@ -1,15 +1,16 @@
 module cpu(
   input  logic     rst_n,
+  input  logic     boot_mode,
   input  logic     clk,
   input  logic [23:0]  counter,
   output logic [3:0]   led,
   output logic [7:0]   col,
-  output logic [7:0]   row,
+  output  logic [7:0]   row,
   input  logic [15:0]  dout,
   output logic [10:0]  pc_out
 
 `ifdef DEBUG_MODE
-    , output logic [7:0] debug_regs [7:0]  // Debug output (only in debug mode)
+    , output logic [7:0] debug_regs [7]  // Debug output (only in debug mode)
 `endif  );
 
   // Decode the instruction fields from dout.
@@ -23,7 +24,7 @@ module cpu(
 
   // Internal registers.
   logic         c_flag;
-  logic [7:0]   regs [7:0];
+  logic [7:0]   regs [8];
   logic [15:0]  pc;
 
 `ifdef DEBUG_MODE
@@ -34,7 +35,8 @@ module cpu(
 
   // LED matrix control signals.
   // anode
-  assign row = { regs[i][0], regs[i][1], regs[i][2], regs[i][3], regs[i][4], regs[i][5], regs[i][6], regs[i][7] };
+  assign row = { regs[i][0], regs[i][1], regs[i][2], regs[i][3], regs[i][4],
+    regs[i][5], regs[i][6], regs[i][7] };
   // cathode
   assign col ={i!=0,i!=1,i!=2,i!=3,i!=4,i!=5,i!=6,i!=7};
 
@@ -87,7 +89,7 @@ module cpu(
 
         // LROTATE: Left rotate regs[sss].
         5'b01111:
-          regs[sss] <= (regs[sss] << 1) | ((regs[sss] >> 7) & 8'b0000001);
+          regs[sss] <= (regs[sss] << 1) | ((regs[sss] >> 7) & 8'b00000001);
 
         // JNC: Jump if no carry; otherwise, increment PC.
         5'b1000z: begin

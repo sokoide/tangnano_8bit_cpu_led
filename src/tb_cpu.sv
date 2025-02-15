@@ -1,11 +1,11 @@
 module tb_cpu;
   // signals for test
-  logic clk_mem;
+  logic clk;
   logic rst_n;
   logic [3:0] led;
   logic [23:0] counter;
   logic [10:0] adr;
-  logic [7:0] regs[7:0];
+  logic [7:0] regs[8];
   logic [7:0] col;
   logic [7:0] row;
 
@@ -35,40 +35,39 @@ module tb_cpu;
   logic        boot_mode;  // 1 during boot, 0 after boot is done
   logic        boot_write;  // Internal signal to control when to write
 
-  // Bootloader state machine signals
-  logic [15:0] boot_data                                               [0:15];
+  logic [15:0] boot_data                                               [17];
+  localparam int unsigned BootDataLength = $bits(boot_data) / $bits(boot_data[0]);
 
   // Program to load during boot
   initial begin
-    boot_data[0]  = 16'b0000_0000_1010_0001;  // mvi 1
-    boot_data[1]  = 16'b0000_0000_01111_000;  // lrotate r0
-    boot_data[2]  = 16'b0000_0000_01100_110;  // inc r6
-    boot_data[3]  = 16'b0000_0000_00_001000;  // mov r1, r0
-    boot_data[4]  = 16'b0000_0000_01100_001;  // inc r1
-    boot_data[5]  = 16'b0000_0000_00_010001;  // mov r2, r1
-    boot_data[6]  = 16'b0000_0000_01100_010;  // inc r2
-    boot_data[7]  = 16'b0000_0000_00_011010;  // mov r3, r2
-    boot_data[8]  = 16'b0000_0000_01100_011;  // inc r3
-    boot_data[9]  = 16'b0000_0000_00_100011;  // mov r4, r3
+    cpu_pc = 11'd0;
+    boot_data[0] = 16'b0000_0000_1010_0001;  // mvi 1
+    boot_data[1] = 16'b0000_0000_01111_000;  // lrotate r0
+    boot_data[3] = 16'b0000_0000_00_001000;  // mov r1, r0
+    boot_data[4] = 16'b0000_0000_01100_001;  // inc r1
+    boot_data[5] = 16'b0000_0000_00_010001;  // mov r2, r1
+    boot_data[6] = 16'b0000_0000_01100_010;  // inc r2
+    boot_data[7] = 16'b0000_0000_00_011010;  // mov r3, r2
+    boot_data[8] = 16'b0000_0000_01100_011;  // inc r3
+    boot_data[9] = 16'b0000_0000_00_100011;  // mov r4, r3
     boot_data[10] = 16'b0000_0000_01100_100;  // inc r4
     boot_data[11] = 16'b0000_0000_00_101100;  // mov r5, r4
-    boot_data[12] = 16'b0000_0000_00_111101;  // mov r7, r5
-    boot_data[13] = 16'b0000_0000_1001_0010;  // jmp 2
+    boot_data[12] = 16'b0000_0000_01100_101;  // inc r5
+    boot_data[13] = 16'b0000_0000_00_110101;  // mov r6, r5
+    boot_data[14] = 16'b0000_0000_01100_110;  // inc r6
+    boot_data[15] = 16'b0000_0000_00_111110;  // mov r7, r6
+    boot_data[16] = 16'b0000_0000_01100_111;  // inc r7
+    boot_data[17] = 16'b0000_0000_1001_0010;  // jmp 2
   end
 
   // Boot process management
-  always_ff @(posedge clk_mem or negedge rst_n) begin
+  always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      // boot_addr  <= 0;
-      // boot_mode  <= 1;
-      // ce         <= 1;
-      // wre        <= 0;
-      // boot_write <= 1;
       boot_addr  <= 0;
-      boot_mode  <= 0;
+      boot_mode  <= 1;
       ce         <= 1;
       wre        <= 0;
-      boot_write <= 0;
+      boot_write <= 1;
     end else if (boot_mode) begin
       if (boot_write) begin
         din <= boot_data[boot_addr];
@@ -77,7 +76,7 @@ module tb_cpu;
         boot_write <= 0;  // Prevent immediate increment in the same cycle
       end else begin
         wre <= 0;  // Disable write after one cycle
-        if (boot_addr == 14'd15) begin
+        if (boot_addr == boot_data_length) begin
           boot_mode <= 0;  // End boot process after writing all data
         end else begin
           boot_addr  <= (boot_addr + 1) & 11'h7FF;
@@ -98,7 +97,7 @@ module tb_cpu;
 
   // BSRAM instance.
   Gowin_SP bsram_inst (
-      .clk  (clk_mem),
+      .clk  (clk),
       .oce  (oce),
       .ce   (ce),
       .reset(rst),
@@ -111,6 +110,7 @@ module tb_cpu;
   // DUT (Device Under Test)
   cpu dut (
       .rst_n     (rst_n),
+      .boot_mode (boot_mode),
       .clk       (counter[1]),
       .counter   (counter),
       .led       (led),
@@ -124,7 +124,7 @@ module tb_cpu;
   );
 
   // update counter
-  always_ff @(posedge clk_mem or negedge rst_n) begin
+  always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       counter <= 24'd0;
     end else begin
@@ -140,44 +140,44 @@ module tb_cpu;
   end
 
   // 20ns clock (#10 means 10ns)
-  always #10 clk_mem = ~clk_mem;
+  always #10 clk = ~clk;
 
   // test
   initial begin
-    clk_mem = 0;
-    @(posedge clk_mem);  // wait for 1 clock cycle before starting the test
+    clk = 0;
+    @(posedge clk);  // wait for 1 clock cycle before starting the test
 
     $display("=== Test Start ===");
 
     rst_n = 0;  // active
-    @(posedge clk_mem);  // wait for 1 clock cycle
+    @(posedge clk);  // wait for 1 clock cycle
     rst_n = 1;  // release
-    repeat (20) @(posedge clk_mem);
+    repeat (20) @(posedge clk);
 
     // Test sequence
-    repeat (1) @(posedge clk_mem);
+    repeat (1) @(posedge clk);
     check_state(1, 8'd0);
 
-    repeat (1) @(posedge clk_mem);
+    repeat (1) @(posedge clk);
     check_state(2, 8'd1);
 
-    repeat (1) @(posedge clk_mem);
+    repeat (1) @(posedge clk);
     check_state(3, 8'd1);
 
-    repeat (1) @(posedge clk_mem);
+    repeat (1) @(posedge clk);
     check_state(4, 8'd2);
 
-    repeat (1) @(posedge clk_mem);
+    repeat (1) @(posedge clk);
     check_state(5, 8'd4);
 
     // get traces some more in the vcd
-    repeat (40) @(posedge clk_mem);
+    repeat (100) @(posedge clk);
 
     $display("=== Test End ===");
     $finish;
   end
 
-  task check_state(input int expected_counter, input [7:0] expected_reg0);
+  task automatic check_state(input int unsigned expected_counter, input logic [7:0] expected_reg0);
     $display("[%04d]", counter);
     if (counter !== expected_counter) begin
       $display("ERROR: Unexpected counter value: %d", counter);
