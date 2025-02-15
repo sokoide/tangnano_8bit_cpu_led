@@ -26,10 +26,5 @@ make download
 
 ### Test Bench
 
-* TODO: Don't know how to use `SP` with verilator
-
-```bash
-make clean
-make run
-make wave
-```
+* Run tests in DSim Desktop on Linux through vscode remote
+* `make wave` on macos to veiw the wave
