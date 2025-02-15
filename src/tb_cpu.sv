@@ -59,11 +59,16 @@ module tb_cpu;
   // Boot process management
   always_ff @(posedge clk_mem or negedge rst_n) begin
     if (!rst_n) begin
+      // boot_addr  <= 0;
+      // boot_mode  <= 1;
+      // ce         <= 1;
+      // wre        <= 0;
+      // boot_write <= 1;
       boot_addr  <= 0;
-      boot_mode  <= 1;
+      boot_mode  <= 0;
       ce         <= 1;
       wre        <= 0;
-      boot_write <= 1;
+      boot_write <= 0;
     end else if (boot_mode) begin
       if (boot_write) begin
         din <= boot_data[boot_addr];

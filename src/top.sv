@@ -9,31 +9,32 @@ module top (
 );
 
   // internal signals
-  logic              [ 3:0] led;
-  logic              [23:0] counter;
-  wire rst_n = !rst;
+  logic [ 3:0] led;
+  logic [23:0] counter;
+  wire         rst_n = !rst;
 
   // CPU and BSRAM signals
   // CPU program counter
-  logic              [10:0] cpu_pc;
+  logic [10:0] cpu_pc;
   // memory write data
   // unused during normal read
-  logic              [15:0] din;
-  logic              [15:0] dout;
+  logic [15:0] din;
+  logic [15:0] dout;
   // chip enable
-  logic                     ce;
+  logic        ce;
   // write enable
-  logic                     wre;
+  logic        wre;
   // output enable
-  logic                     oce = 1'b1;
+  logic        oce = 1'b1;
 
   // Bootloader signals
-  logic              [10:0] boot_addr;
+  logic [10:0] boot_addr;
   // 1 during boot, 0 after boot is done
-  logic                     boot_mode;
+  logic        boot_mode;
   // Internal signal to control when to write
-  logic                     boot_write;
-  logic              [15:0] boot_data  [0:16];
+  logic        boot_write;
+  logic [15:0] boot_data    [0:17];
+  localparam [15:0] boot_data_length = $bits(boot_data) / $bits(boot_data[0]);
 
   // Program to load during boot
   initial begin
@@ -53,7 +54,8 @@ module top (
     boot_data[13] = 16'b0000_0000_00_110101;  // mov r6, r5
     boot_data[14] = 16'b0000_0000_01100_110;  // inc r6
     boot_data[15] = 16'b0000_0000_00_111110;  // mov r7, r6
-    boot_data[16] = 16'b0000_0000_1001_0010;  // jmp 2
+    boot_data[16] = 16'b0000_0000_01100_111;  // inc r7
+    boot_data[17] = 16'b0000_0000_1001_0010;  // jmp 2
   end
 
   // Boot process management
@@ -72,7 +74,7 @@ module top (
         boot_write <= 0;  // Prevent immediate increment in the same cycle
       end else begin
         wre <= 0;  // Disable write after one cycle
-        if (boot_addr == 16'd15) begin
+        if (boot_addr == boot_data_length) begin
           boot_mode <= 0;  // End boot process after writing all data
         end else begin
           boot_addr  <= (boot_addr + 1) & 11'h7FF;
@@ -104,7 +106,7 @@ module top (
   // CPU instance
   cpu cpu1 (
       .rst_n  (rst_n),
-      .clk    (counter[23]),
+      .clk    (counter[22]),
       .counter(counter),
       .led    (led),
       .col    (col),
