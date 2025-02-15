@@ -14,48 +14,39 @@ module top (
   wire         rst_n = !rst;
 
   // CPU and BSRAM signals
-  // CPU program counter
-  logic [10:0] cpu_pc;
-  // memory write data
-  // unused during normal read
-  logic [15:0] din;
+  logic [10:0] cpu_pc;  // CPU program counter
+  logic [15:0] din;  // memory write data, unused during normal read
   logic [15:0] dout;
-  // chip enable
-  logic        ce;
-  // write enable
-  logic        wre;
-  // output enable
-  logic        oce = 1'b1;
+  logic        ce;  // chip enable
+  logic        wre;  // write enable
+  logic        oce = 1'b1;  // output enable
 
   // Bootloader signals
   logic [10:0] boot_addr;
-  // 1 during boot, 0 after boot is done
-  logic        boot_mode;
-  // Internal signal to control when to write
-  logic        boot_write;
-  logic [15:0] boot_data    [18];
+  logic        boot_mode;  // 1 during boot, 0 after boot is done
+  logic        boot_write;  // Internal signal to control when to write
+  logic [15:0] boot_data                                               [17];
   localparam int unsigned BootDataLength = $bits(boot_data) / $bits(boot_data[0]);
 
   // Program to load during boot
   initial begin
-    cpu_pc = 11'd0;
     boot_data[0] = 16'b0000_0000_1010_0001;  // mvi 1
     boot_data[1] = 16'b0000_0000_01111_000;  // lrotate r0
-    boot_data[3] = 16'b0000_0000_00_001000;  // mov r1, r0
-    boot_data[4] = 16'b0000_0000_01100_001;  // inc r1
-    boot_data[5] = 16'b0000_0000_00_010001;  // mov r2, r1
-    boot_data[6] = 16'b0000_0000_01100_010;  // inc r2
-    boot_data[7] = 16'b0000_0000_00_011010;  // mov r3, r2
-    boot_data[8] = 16'b0000_0000_01100_011;  // inc r3
-    boot_data[9] = 16'b0000_0000_00_100011;  // mov r4, r3
-    boot_data[10] = 16'b0000_0000_01100_100;  // inc r4
-    boot_data[11] = 16'b0000_0000_00_101100;  // mov r5, r4
-    boot_data[12] = 16'b0000_0000_01100_101;  // inc r5
-    boot_data[13] = 16'b0000_0000_00_110101;  // mov r6, r5
-    boot_data[14] = 16'b0000_0000_01100_110;  // inc r6
-    boot_data[15] = 16'b0000_0000_00_111110;  // mov r7, r6
-    boot_data[16] = 16'b0000_0000_01100_111;  // inc r7
-    boot_data[17] = 16'b0000_0000_1001_0010;  // jmp 2
+    boot_data[2] = 16'b0000_0000_00_001000;  // mov r1, r0
+    boot_data[3] = 16'b0000_0000_01100_001;  // inc r1
+    boot_data[4] = 16'b0000_0000_00_010001;  // mov r2, r1
+    boot_data[5] = 16'b0000_0000_01100_010;  // inc r2
+    boot_data[6] = 16'b0000_0000_00_011010;  // mov r3, r2
+    boot_data[7] = 16'b0000_0000_01100_011;  // inc r3
+    boot_data[8] = 16'b0000_0000_00_100011;  // mov r4, r3
+    boot_data[9] = 16'b0000_0000_01100_100;  // inc r4
+    boot_data[10] = 16'b0000_0000_00_101100;  // mov r5, r4
+    boot_data[11] = 16'b0000_0000_01100_101;  // inc r5
+    boot_data[12] = 16'b0000_0000_00_110101;  // mov r6, r5
+    boot_data[13] = 16'b0000_0000_01100_110;  // inc r6
+    boot_data[14] = 16'b0000_0000_00_111110;  // mov r7, r6
+    boot_data[15] = 16'b0000_0000_01100_111;  // inc r7
+    boot_data[16] = 16'b0000_0000_1001_0010;  // jmp 2
   end
 
   // Boot process management
