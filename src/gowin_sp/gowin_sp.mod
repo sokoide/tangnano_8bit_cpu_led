@@ -10,9 +10,8 @@
 -path /Users/scott/repo/sokoide/fpga/8bit_bsram/src/gowin_sp/
 -type RAM_SP
 -file_type vlg
--depth 2048
+-depth 1024
 -width 16
 -read_mode bypass
 -write_mode normal
--reset_mode async
--init_file /Users/scott/repo/sokoide/fpga/8bit_bsram/data/code1.mi
+-reset_mode sync

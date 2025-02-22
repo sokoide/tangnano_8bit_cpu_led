@@ -8,7 +8,7 @@ module cpu (
   input  logic [23:0]  counter,
   output logic [3:0]   led,
   output logic [7:0]   col,
-  output  logic [7:0]   row,
+  output logic [7:0]   row,
   input  logic [15:0]  dout,
   output logic [10:0]  pc_out
 );
@@ -25,7 +25,7 @@ module cpu (
   // Internal registers.
   logic        c_flag;
   logic [ 7:0] regs               [8];
-  logic [15:0] pc;
+  logic [11:0] pc;
 
 `ifdef DEBUG_MODE
   // Assign debug output for testing
